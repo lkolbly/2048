@@ -35,6 +35,41 @@ GameManager.prototype.isGameTerminated = function () {
   }
 };
 
+function leapFrameEvent(frame, game) {
+    // We just want swiping gestures
+    for (var i=0; i<frame.gestures.length; i++) {
+	var gesture = frame.gestures[i];
+	if (gesture.type == "swipe") {
+	    if (gesture.state === "stop" &&
+		game.leapSeenGestures.indexOf(gesture.id) == -1) {
+		console.log(gesture);
+		game.leapSeenGestures.push(gesture.id);
+
+		//GameManager.prototype.move = function (direction) {
+		// 0: up, 1: right, 2: down, 3: left
+
+		// Figure out which way it's mostly going (+/- Y, +/- X)
+		if (gesture.direction[0]*gesture.direction[0] > gesture.direction[1]*gesture.direction[1]) {
+		    // +/- X
+		    if (gesture.direction[0] > 0) {
+			game.move(1);
+		    } else {
+			game.move(3);
+		    }
+		} else {
+		    // +/- Y
+		    if (gesture.direction[1] > 0) {
+			game.move(0);
+		    } else {
+			game.move(2);
+		    }
+		}
+		break;
+	    }
+	}
+    }
+}
+
 // Set up the game
 GameManager.prototype.setup = function () {
   var previousState = this.storageManager.getGameState();
@@ -57,6 +92,20 @@ GameManager.prototype.setup = function () {
     // Add the initial tiles
     this.addStartTiles();
   }
+
+  // Start the Leap connection
+  console.log("Starting leap device connection");
+  this.leapController = new Leap.Controller();
+  this.leapController.on("connect", function() {
+    console.log("connected to leap device");
+  });
+  var game = this;
+  this.lastLeapMoveTime = 0;
+  this.leapSeenGestures = [];
+  this.leapController.on("frame", function(frame) {
+    leapFrameEvent(frame,game);
+  });
+  this.leapController.connect();
 
   // Update the actuator
   this.actuate();
