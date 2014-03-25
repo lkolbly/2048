@@ -41,9 +41,12 @@ function leapFrameEvent(frame, game) {
 	var gesture = frame.gestures[i];
 	if (gesture.type == "swipe") {
 	    if (gesture.state === "stop" &&
-		game.leapSeenGestures.indexOf(gesture.id) == -1) {
-		console.log(gesture);
+		game.leapSeenGestures.indexOf(gesture.id) == -1 &&
+		gesture.handIds.length > 0 &&
+		gesture.duration > 75000) {
 		game.leapSeenGestures.push(gesture.id);
+
+		console.log(gesture);
 
 		//GameManager.prototype.move = function (direction) {
 		// 0: up, 1: right, 2: down, 3: left
@@ -65,6 +68,11 @@ function leapFrameEvent(frame, game) {
 		    }
 		}
 		break;
+	    }
+	} else if (gesture.type == "screenTap") {
+	    if (gesture.position[2] < 0) {
+		console.log(gesture);
+		game.restart();
 	    }
 	}
     }
@@ -95,7 +103,7 @@ GameManager.prototype.setup = function () {
 
   // Start the Leap connection
   console.log("Starting leap device connection");
-  this.leapController = new Leap.Controller();
+  this.leapController = new Leap.Controller({enableGestures: true});
   this.leapController.on("connect", function() {
     console.log("connected to leap device");
   });
